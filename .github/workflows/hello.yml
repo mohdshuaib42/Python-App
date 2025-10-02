@@ -1,14 +1,40 @@
-name: Hello World Workflow
+name: Docker Build & Push
 
 on:
-  push:   # Trigger workflow on every push
+  push:
     branches:
-      - '**'   # Any branch
+      - main   # only run on pushes to main
 
 jobs:
-  say-hello:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Print Hello Message
-        run: echo "Hello GitHub Actions!"
+      # Step 1: Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.mohdshuaib42 }}
+          password: ${{ secrets.WxzK#4eYRH9eBsf }}
+
+      # Step 3: Set up Docker image name and tags
+      - name: Set up Docker metadata
+        id: vars
+        run: |
+          echo "IMAGE_NAME=${{ secrets.DOCKER_USERNAME }}/myapp" >> $GITHUB_ENV
+          echo "GIT_SHA=${GITHUB_SHA}" >> $GITHUB_ENV
+
+      # Step 4: Build Docker image with both tags
+      - name: Build Docker image
+        run: |
+          docker build -t $IMAGE_NAME:latest -t $IMAGE_NAME:${GIT_SHA} .
+
+      # Step 5: Push both tags
+      - name: Push Docker image
+        run: |
+          docker push $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:${GIT_SHA}
